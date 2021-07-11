@@ -25,7 +25,7 @@ namespace chip8 {
 		}
 
 		void Cpu::load_rom(std::string romloc) {
-			debug_msg("Loading ROM...", MsgType::UPDATE);
+			dout << MsgType::UPDATE << "Loading ROM..." << std::endl;
 			timer.push_time();
 			// Store ROM into vector. ROM is in the vector until it gets loaded into memory.
 			std::ifstream i(romloc, std::fstream::binary);

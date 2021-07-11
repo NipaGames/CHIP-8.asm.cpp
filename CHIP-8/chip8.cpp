@@ -29,7 +29,7 @@ namespace chip8 {
 	BenchmarkTimer timer;
 
 	void allocmem() {
-		debug_msg("Allocating memory...", MsgType::UPDATE);
+		dout << MsgType::UPDATE << "Allocating memory..." << std::endl;
 		timer.push_time();
 		// Instantiate memory
 		MEM_BLOCK = new char[MEM_SIZE];
@@ -38,28 +38,28 @@ namespace chip8 {
 		// Using my own (somewhat optimized) assembly function.
 		asm_mem_reset((char*)MEM_PTR, MEM_SIZE);
 		timer.print_time("Memory allocation complete");
-		debug_msg("Allocated " + std::to_string(MEM_SIZE) + " bytes of memory successfully!", MsgType::INFO);
+		dout << MsgType::INFO << "Allocated " << std::to_string(MEM_SIZE) << " bytes of memory successfully!" << std::endl;
 	}
 }
 
 int main() {
 	// Sicko mode ASCII art
-	std::cout <<
+	dout << 
 		" _______  __   __  ___   _______          _____         _______  _______  __   __        _______  _______  _______ " << std::endl <<
 		"|       ||  | |  ||   | |       |        |  _  |       |   _   ||       ||  |_|  |      |       ||       ||       |" << std::endl <<
 		"|       ||  |_|  ||   | |    _  | ____   | |_| |       |  |_|  ||  _____||       |      |       ||    _  ||    _  |" << std::endl <<
 		"|       ||       ||   | |   |_| ||____| |   _   |      |       || |_____ |       |      |       ||   |_| ||   |_| |" << std::endl <<
 		"|      _||       ||   | |    ___|       |  | |  | ___  |       ||_____  ||       | ___  |      _||    ___||    ___|" << std::endl <<
 		"|     |_ |   _   ||   | |   |           |  |_|  ||   | |   _   | _____| || ||_|| ||   | |     |_ |   |    |   |    " << std::endl <<
-		"|_______||__| |__||___| |___|           |_______||___| |__| |__||_______||_|   |_||___| |_______||___|    |___|    " << std::endl << 
+		"|_______||__| |__||___| |___|           |_______||___| |__| |__||_______||_|   |_||___| |_______||___|    |___|    " << std::endl <<
 		"S***ty coded by ya boi NipaGames" << std::endl << std::endl;
 #ifdef _DEBUG
-	DEBUG = true;
+	CONSOLE = Console::DEBUG;
 #else
-	DEBUG = false;
+	CONSOLE = Console::HIDDEN;
 #endif
-	DEBUG = true;
-	debug_msg("Starting the actual execution at " + floatf(timer.get_interval(0), 2) + "s.", MsgType::TIMER);
+	CONSOLE = Console::DEBUG;
+	dout << MsgType::TIMER << "Starting the actual execution at " << floatf(timer.get_interval(0), 2) << "s." << std::endl;
 	allocmem();
 	Cpu cpu;
 	cpu.load_rom("C:\\Users\\Nipa\\Documents\\roms\\chip8\\logo.ch8");

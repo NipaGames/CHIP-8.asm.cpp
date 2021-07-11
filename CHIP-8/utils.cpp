@@ -2,31 +2,33 @@
 
 namespace chip8 {
     namespace utils {
-        bool DEBUG;
+        Console CONSOLE;
 
-        void debug_msg(std::string str, MsgType t)
-        {
-            if (DEBUG) {
-                std::string prefix;
-                switch (t)
-                {
-                case MsgType::TIMER:
-                    prefix = "[TIMER] ";
-                    break;
-                case MsgType::UPDATE:
-                    prefix = "[UPDATE] ";
-                    break;
-                case MsgType::INFO:
-                    prefix = "[INFO] ";
-                    break;
-                case MsgType::NO_TYPE:
-                default:
-                    prefix = "";
-                    break;
-                }
-                std::cout << prefix << str << std::endl;
-            }
+        DebugOStream& DebugOStream::operator<<(manip m) {
+            return this->operator<<<manip>(m);
         }
+
+        DebugOStream& DebugOStream::operator<<(MsgType t) {
+            std::string prefix;
+            switch (t) {
+            case MsgType::TIMER:
+                prefix = "[TIMER] ";
+                break;
+            case MsgType::UPDATE:
+                prefix = "[UPDATE] ";
+                break;
+            case MsgType::INFO:
+                prefix = "[INFO] ";
+                break;
+            case MsgType::NO_TYPE:
+            default:
+                prefix = "";
+                break;
+            }
+            return this->operator<<<std::string>(prefix);
+        }
+
+        DebugOStream dout;
 
         //Format float to defined precision
         std::string floatf(float value, int prec) {
@@ -45,7 +47,7 @@ namespace chip8 {
         }
 
         void BenchmarkTimer::print_time(std::string msg) {
-            debug_msg(msg + " in " + floatf(this->get_interval(0), 2) + "s. Took " + floatf(this->pop_interval(), 2) + "s.", MsgType::TIMER);
+            dout << MsgType::TIMER << msg << " in " << floatf(this->get_interval(0), 2) << "s. Took " << floatf(this->pop_interval(), 2) << "s." << std::endl;
         }
 
         void BenchmarkTimer::push_time() {

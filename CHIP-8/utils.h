@@ -7,7 +7,12 @@
 
 namespace chip8 {
 	namespace utils {
-		extern bool DEBUG;
+		enum class Console {
+			DEBUG,
+			EMULATE,
+			HIDDEN
+		};
+		extern Console CONSOLE;
 		std::string floatf(float, int);
 		enum class MsgType
 		{
@@ -16,8 +21,22 @@ namespace chip8 {
 			INFO,
 			NO_TYPE
 		};
-
-		void debug_msg(std::string, MsgType = MsgType::NO_TYPE);
+		class DebugOStream {
+		public:
+			explicit DebugOStream() {}
+			template<class T>
+			DebugOStream& operator<<(const T& v) {
+				if (CONSOLE == Console::DEBUG) {
+					std::cout << v;
+				}
+				return *this;
+			}
+			typedef std::ostream& (*manip)(std::ostream&);
+			DebugOStream& operator<<(manip);
+			DebugOStream& operator<<(MsgType t);
+		};
+		extern DebugOStream dout;
+		extern DebugOStream doutln;
 		class BenchmarkTimer {
 		public:
 			BenchmarkTimer();

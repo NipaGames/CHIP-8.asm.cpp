@@ -14,18 +14,17 @@ namespace chip8 {
 	{
 		asmerr();
 	}
-	int asm_mem_load(char* addr)
+	int asm_mem_load(char* addr, char size)
 	{
 		asmerr();
 		return 1;
 	}
 #endif
-
 	const unsigned int MEM_SIZE = 0x1000;
 	const unsigned int REGS_SIZE = 16;
 	const unsigned int STACK_SIZE = 16;
-	volatile char* MEM_BLOCK;
-	volatile char* MEM_PTR;
+	char* MEM_BLOCK;
+	char* MEM_PTR;
 	BenchmarkTimer timer;
 
 	void allocmem() {
@@ -43,6 +42,11 @@ namespace chip8 {
 }
 
 int main() {
+#ifdef _DEBUG
+	CONSOLE = Console::DEBUG;
+#else
+	CONSOLE = Console::HIDDEN;
+#endif
 	// Sicko mode ASCII art
 	dout << 
 		" _______  __   __  ___   _______          _____         _______  _______  __   __        _______  _______  _______ " << std::endl <<
@@ -53,12 +57,6 @@ int main() {
 		"|     |_ |   _   ||   | |   |           |  |_|  ||   | |   _   | _____| || ||_|| ||   | |     |_ |   |    |   |    " << std::endl <<
 		"|_______||__| |__||___| |___|           |_______||___| |__| |__||_______||_|   |_||___| |_______||___|    |___|    " << std::endl <<
 		"S***ty coded by ya boi NipaGames" << std::endl << std::endl;
-#ifdef _DEBUG
-	CONSOLE = Console::DEBUG;
-#else
-	CONSOLE = Console::HIDDEN;
-#endif
-	CONSOLE = Console::DEBUG;
 	dout << MsgType::TIMER << "Starting the actual execution at " << floatf(timer.get_interval(0), 2) << "s." << std::endl;
 	allocmem();
 	Cpu cpu;

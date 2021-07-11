@@ -24,18 +24,18 @@ asm_mem_reset proc		; chip8.h: asm_mem_reset(char* addr, int len);
 						; the whole memory with 0x69s (haha funny number)
 						; using "mov ecx, 069696969h"
 	mov [eax], ecx
-forloop:
+resetloop:
 	add eax, 4			; Add 4 bytes to EAX, since the buffer size is
 						; sizeof DWORD (4B)
 	cmp eax, ebx
-	jge exit			; If EAX is greater than the memory block length,
+	jge resetexit		; If EAX is greater than the memory block length,
 						; exit loop.
 	cmp [eax], ecx
-	je forloop			; If value of the pointer (EAX) is already ECX,
+	je resetloop		; If value of the pointer (EAX) is already ECX,
 						; skip address.
 	mov [eax], ecx
-	jmp forloop	
-exit:
+	jmp resetloop	
+resetexit:
 	pop ecx				; Aaaaaand... popping.
 	pop ebx				; God I love assembly.
 	pop eax
@@ -58,7 +58,15 @@ asm_mem_load proc		; chip8.h: asm_mem_load(char* addr);
 	mov ebp, esp
 	mov eax, [ebp+8]	; Load addr into EAX.
 	mov eax, [eax]		; Load memory from addr into EAX.
-	and eax, 000000FFh	; Get only the last byte.
+	xchg ah, al			; Converting EAX to big-endian.
+    rol eax, 16
+    xchg ah, al
+	mov bl, 4			; Max bytes to load is 4.
+	mov cl, [ebp+12]	; Load size into EBX.
+	sub bl, cl
+	mov cl, bl
+	shl cl, 3			; Multiply size by 8. (Convert bytes to bits)
+	shr eax, cl			; Right-shift EAX by CL.
 	pop ebp
 	ret
 asm_mem_load endp

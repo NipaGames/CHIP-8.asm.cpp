@@ -33,15 +33,17 @@ namespace chip8 {
 			// Load ROM into memory starting at address 0x200.
 			for (unsigned int i = 0; i < buffer.size(); i++) {
 				char c = buffer[i];
-				asm_mem_store((char*)MEM_PTR + 0x200 + i, c);
+				asm_mem_store(MEM_PTR + 0x200 + i, c);
 			}
 			timer.print_time("Loaded ROM");
 		}
 
 		void Cpu::emulate() {
-			for (;;) {
-				
-			}
+			//for (;;) {
+			unsigned int opc = asm_mem_load(MEM_PTR + 0x200, 4);
+			dout << std::to_string(opc) << std::endl;
+			//}
+			for (;;);
 		}
 	}
 }

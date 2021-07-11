@@ -19,7 +19,17 @@ namespace chip8 {
 			TIMER,
 			UPDATE,
 			INFO,
+			WARNING,
 			NO_TYPE
+		};
+		class CColor {
+		public:
+			CColor() : c_color(0) {}
+			CColor(uint8_t c) : c_color(c) {}
+			explicit CColor(uint8_t b, uint8_t f) : c_color(b<<4|f) {}
+			void operator()(uint8_t c) { c_color = c; }
+			void operator()(uint8_t b, uint8_t f) { c_color = b << 4 | f; }
+			uint8_t c_color;
 		};
 		class DebugOStream {
 		public:
@@ -33,7 +43,8 @@ namespace chip8 {
 			}
 			typedef std::ostream& (*manip)(std::ostream&);
 			DebugOStream& operator<<(manip);
-			DebugOStream& operator<<(MsgType t);
+			DebugOStream& operator<<(MsgType);
+			DebugOStream& operator<<(CColor);
 		};
 		extern DebugOStream dout;
 		extern DebugOStream doutln;

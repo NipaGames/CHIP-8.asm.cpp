@@ -20,7 +20,7 @@ namespace chip8 {
 	extern char* MEM_BLOCK;
 	extern char* MEM_PTR;
 
-	extern "C" void asm_mem_reset(char*, int);
-	extern "C" void asm_mem_store(char*, char);
-	extern "C" int asm_mem_load(char*, char);
+	extern "C" void asm_mem_reset(char*, uint32_t);
+	extern "C" void asm_mem_store(char*, uint8_t);
+	extern "C" uint32_t asm_mem_load(char*, uint8_t);
 }

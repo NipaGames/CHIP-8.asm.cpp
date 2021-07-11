@@ -3,6 +3,11 @@
 
 namespace chip8 {
 	namespace cpu {
+		void invalid_opcode(Cpu* cpu, unsigned short opc) {
+			dout << MsgType::WARNING << "Unknown opcode: 0x" << std::hex << std::setfill('0') << std::setw(4) << opc << "!" << std::endl;
+			cpu->pc += 2;
+		}
+
 		Cpu::~Cpu() {
 			delete[] V;
 			delete[] stack;
@@ -15,7 +20,7 @@ namespace chip8 {
 		void Cpu::init() {
 			I = 0;
 			pc = 0;
-			sp = 0;
+			sp = STACK_SIZE;
 			V = new unsigned char[REGS_SIZE];
 			stack = new unsigned short[STACK_SIZE];
 			// We are using my ASM-defined function also for registers. Why not?
@@ -38,11 +43,56 @@ namespace chip8 {
 			timer.print_time("Loaded ROM");
 		}
 
+		void Cpu::timers_update() {
+			while (!finished_) {
+				if (delay_timer > 0)
+					delay_timer--;
+				if (sound_timer > 0)
+					sound_timer--;
+				std::this_thread::sleep_for(1s / 60);
+			}
+		}
+
 		void Cpu::emulate() {
-			//for (;;) {
-			unsigned int opc = asm_mem_load(MEM_PTR + 0x200, 4);
-			dout << std::to_string(opc) << std::endl;
-			//}
+			dout << MsgType::TIMER << "Emulation started at " << floatf(timer.get_interval(0), 2) << "s." << std::endl;
+			timer.push_time();
+			std::thread timers([this] { this->timers_update(); });
+			dout << MsgType::UPDATE << "Started timers" << std::endl;
+			while (pc < 0x1000) {
+				unsigned short opc = asm_mem_load(MEM_PTR + 0x200 + pc, sizeof(short));
+				dout << MsgType::INFO << "Emulating opcode: 0x" << std::hex << std::setfill('0') << std::setw(4) << opc << std::endl;
+				switch (opc & 0xF000) {
+				case 0x0000:
+					switch (opc & 0x000F) {
+					case 0x0000:
+						// TODO: Clear screen
+						pc += 2;
+						break;
+					case 0x000E:
+						pc = stack[++sp];
+						break;
+					default:
+						invalid_opcode(this, opc);
+						pc += 2;
+						break;
+					}
+					break;
+				case 0x1000:
+					pc = opc & 0xFFF;
+					break;
+				case 0x2000:
+					stack[sp--] = pc;
+					pc = opc & 0x0FFF;
+					break;
+				default:
+					invalid_opcode(this, opc);
+					pc += 2;
+					break;
+				}
+			}
+			finished_ = true;
+			timers.join();
+			timer.print_time("Finished emulation");
 			for (;;);
 		}
 	}

@@ -1,7 +1,9 @@
 #include "utils.h"
+#include <Windows.h>
 
 namespace chip8 {
     namespace utils {
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
         Console CONSOLE;
 
         DebugOStream& DebugOStream::operator<<(manip m) {
@@ -9,23 +11,43 @@ namespace chip8 {
         }
 
         DebugOStream& DebugOStream::operator<<(MsgType t) {
-            std::string prefix;
+            CColor c;
+            CColor mc = 0x08;
+            std::string s;
             switch (t) {
             case MsgType::TIMER:
-                prefix = "[TIMER] ";
-                break;
+                c = 0x0B;
+                s = "TIMER";
+                break;;
             case MsgType::UPDATE:
-                prefix = "[UPDATE] ";
+                c = 0x0B;
+                s = "UPDATE";
                 break;
             case MsgType::INFO:
-                prefix = "[INFO] ";
+                c = 0x0B;
+                s = "INFO";
                 break;
-            case MsgType::NO_TYPE:
-            default:
-                prefix = "";
+            case MsgType::WARNING:
+                c = 0x04;
+                mc = 0x0E;
+                s = "WARNING";
                 break;
             }
-            return this->operator<<<std::string>(prefix);
+            if (t != MsgType::NO_TYPE) {
+                this->operator<<(CColor(0x07));
+                this->operator<<("[");
+                this->operator<<(c);
+                this->operator<<(s);
+                this->operator<<(CColor(0x07));
+                this->operator<<("] ");
+                this->operator<<(mc);
+            }
+            return this->operator<<("");
+        }
+
+        DebugOStream& DebugOStream::operator<<(CColor c) {
+            SetConsoleTextAttribute(hConsole, c.c_color);
+            return this->operator<<<std::string>("");
         }
 
         DebugOStream dout;

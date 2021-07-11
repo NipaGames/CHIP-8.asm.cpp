@@ -58,7 +58,7 @@ asm_mem_load proc		; chip8.h: asm_mem_load(char* addr);
 	mov ebp, esp
 	mov eax, [ebp+8]	; Load addr into EAX.
 	mov eax, [eax]		; Load memory from addr into EAX.
-	xchg ah, al			; Converting EAX to big-endian.
+	xchg ah, al			; Converting EAX to little-endian.
     rol eax, 16
     xchg ah, al
 	mov bl, 4			; Max bytes to load is 4.

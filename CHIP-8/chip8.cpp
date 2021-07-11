@@ -6,15 +6,15 @@ namespace chip8 {
 	void asmerr() {
 		std::cout << "ASM not defined!" << std::endl;
 	}
-	void asm_mem_reset(char* addr, int len)
+	void asm_mem_reset(char* addr, uint32_t len)
 	{
 		asmerr();
 	}
-	void asm_mem_store(char* addr, char data)
+	void asm_mem_store(char* addr, uint8_t data)
 	{
 		asmerr();
 	}
-	int asm_mem_load(char* addr, char size)
+	int asm_mem_load(char* addr, uint8_t size)
 	{
 		asmerr();
 		return 1;
@@ -47,6 +47,8 @@ int main() {
 #else
 	CONSOLE = Console::HIDDEN;
 #endif
+	// Reset console colors
+	dout << CColor(0x07);
 	// Sicko mode ASCII art
 	dout << 
 		" _______  __   __  ___   _______          _____         _______  _______  __   __        _______  _______  _______ " << std::endl <<

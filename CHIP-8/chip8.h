@@ -9,6 +9,7 @@ using namespace chip8;
 using namespace chip8::utils;
 using namespace chip8::cpu;
 
+#define ASM
 
 namespace chip8 {
 	extern BenchmarkTimer timer;

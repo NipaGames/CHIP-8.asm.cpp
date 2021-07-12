@@ -2,6 +2,11 @@
 
 #include <iostream>
 #include <vector>
+#include <map>
+#include <set>
+#include <Windows.h>
+#include <tchar.h>
+#include <atlstr.h>
 #include "utils.h"
 #include "cpu.h"
 
@@ -14,11 +19,14 @@ using namespace chip8::cpu;
 namespace chip8 {
 	extern BenchmarkTimer timer;
 	
-	extern const unsigned int MEM_SIZE;
-	extern const unsigned int REGS_SIZE;
-	extern const unsigned int STACK_SIZE;
+	extern unsigned int MEM_SIZE;
+	extern unsigned int REGS_SIZE;
+	extern unsigned int STACK_SIZE;
 	extern char* MEM_BLOCK;
 	extern char* MEM_PTR;
+	extern std::string ROM_LOC;
+
+	std::string getarg(std::string);
 
 	extern "C" void asm_mem_reset(char*, uint32_t);
 	extern "C" void asm_mem_store(char*, uint8_t);

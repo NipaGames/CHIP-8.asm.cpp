@@ -1,18 +1,24 @@
 #include "utils.h"
-#include <Windows.h>
 
 namespace chip8 {
     namespace utils {
+        std::string tolower(std::string s) {
+            std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { 
+                return std::tolower(c); 
+            });
+            return s;
+        }
+
         HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        Console CONSOLE;
+        Console CONSOLE = Console::DEBUGOUT;
 
         DebugOStream& DebugOStream::operator<<(manip m) {
             return this->operator<<<manip>(m);
         }
 
         DebugOStream& DebugOStream::operator<<(MsgType t) {
-            CColor c;
-            CColor mc = 0x08;
+            WinColor c;
+            WinColor mc = 0x08;
             std::string s;
             switch (t) {
             case MsgType::TIMER:
@@ -28,24 +34,29 @@ namespace chip8 {
                 s = "INFO";
                 break;
             case MsgType::WARNING:
-                c = 0x04;
-                mc = 0x0E;
+                c = 0x06;
+                mc = 0x0e;
                 s = "WARNING";
+                break;
+            case MsgType::FATAL:
+                c = 0x04;
+                mc = 0x0c;
+                s = "FATAL ERROR";
                 break;
             }
             if (t != MsgType::NO_TYPE) {
-                this->operator<<(CColor(0x07));
+                this->operator<<(WinColor(0x07));
                 this->operator<<("[");
                 this->operator<<(c);
                 this->operator<<(s);
-                this->operator<<(CColor(0x07));
+                this->operator<<(WinColor(0x07));
                 this->operator<<("] ");
                 this->operator<<(mc);
             }
             return this->operator<<("");
         }
 
-        DebugOStream& DebugOStream::operator<<(CColor c) {
+        DebugOStream& DebugOStream::operator<<(WinColor c) {
             SetConsoleTextAttribute(hConsole, c.c_color);
             return this->operator<<<std::string>("");
         }

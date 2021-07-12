@@ -93,7 +93,6 @@ namespace chip8 {
 			finished_ = true;
 			timers.join();
 			timer.print_time("Finished emulation");
-			for (;;);
 		}
 	}
 }

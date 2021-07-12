@@ -4,11 +4,14 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
+#include <algorithm>
+#include <Windows.h>
 
 namespace chip8 {
 	namespace utils {
+		std::string tolower(const std::string);
 		enum class Console {
-			DEBUG,
+			DEBUGOUT,
 			EMULATE,
 			HIDDEN
 		};
@@ -20,13 +23,14 @@ namespace chip8 {
 			UPDATE,
 			INFO,
 			WARNING,
+			FATAL,
 			NO_TYPE
 		};
-		class CColor {
+		class WinColor {
 		public:
-			CColor() : c_color(0) {}
-			CColor(uint8_t c) : c_color(c) {}
-			explicit CColor(uint8_t b, uint8_t f) : c_color(b<<4|f) {}
+			WinColor() : c_color(0) {}
+			WinColor(uint8_t c) : c_color(c) {}
+			explicit WinColor(uint8_t b, uint8_t f) : c_color(b<<4|f) {}
 			void operator()(uint8_t c) { c_color = c; }
 			void operator()(uint8_t b, uint8_t f) { c_color = b << 4 | f; }
 			uint8_t c_color;
@@ -36,7 +40,7 @@ namespace chip8 {
 			explicit DebugOStream() {}
 			template<class T>
 			DebugOStream& operator<<(const T& v) {
-				if (CONSOLE == Console::DEBUG) {
+				if (CONSOLE == Console::DEBUGOUT) {
 					std::cout << v;
 				}
 				return *this;
@@ -44,7 +48,7 @@ namespace chip8 {
 			typedef std::ostream& (*manip)(std::ostream&);
 			DebugOStream& operator<<(manip);
 			DebugOStream& operator<<(MsgType);
-			DebugOStream& operator<<(CColor);
+			DebugOStream& operator<<(WinColor);
 		};
 		extern DebugOStream dout;
 		extern DebugOStream doutln;

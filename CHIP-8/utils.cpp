@@ -57,11 +57,21 @@ namespace chip8 {
         }
 
         DebugOStream& DebugOStream::operator<<(WinColor c) {
-            SetConsoleTextAttribute(hConsole, c.c_color);
+            if (std::find(this->allowed_.begin(), this->allowed_.end(), CONSOLE) != this->allowed_.end())
+                SetConsoleTextAttribute(hConsole, c.c_color);
             return this->operator<<<std::string>("");
         }
 
-        DebugOStream dout;
+
+        void DebugOStream::fatal_err() {
+            this->operator<<(MsgType::FATAL);
+            this->operator<<("Huh. An error has occured. Hopefully I didn't do anything wrong.");
+            this->operator<<(std::endl);
+            this->operator<<(WinColor(0x07));
+            exit(EXIT_FAILURE);
+        }
+
+        DebugOStream dout{ Console::DEBUGOUT };
 
         //Format float to defined precision
         std::string floatf(float value, int prec) {

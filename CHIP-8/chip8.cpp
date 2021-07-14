@@ -6,15 +6,15 @@ namespace chip8 {
 	void asmerr() {
 		std::cout << "ASM not defined!" << std::endl;
 	}
-	void asm_mem_reset(char* addr, uint32_t len)
+	void asm_mem_reset(void* addr, uint32_t len)
 	{
 		asmerr();
 	}
-	void asm_mem_store(char* addr, uint8_t data)
+	void asm_mem_store(void* addr, uint32_t data)
 	{
 		asmerr();
 	}
-	int asm_mem_load(char* addr, uint8_t size)
+	int asm_mem_load(void* addr, uint8_t size)
 	{
 		asmerr();
 		return 1;
@@ -36,7 +36,7 @@ namespace chip8 {
 		MEM_PTR = &MEM_BLOCK[0];
 		// Fill the memory with zeroes just in case.
 		// Using my own (somewhat optimized) assembly function.
-		asm_mem_reset((char*)MEM_PTR, MEM_SIZE);
+		asm_mem_reset(MEM_PTR, MEM_SIZE);
 		timer.print_time("Memory allocation complete");
 		dout << MsgType::INFO << "Allocated " << std::to_string(MEM_SIZE) << " bytes of memory successfully!" << std::endl;
 	}
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
 		}
 		ignored_args.push_back(arg);
 	}
-	
+	SetConsoleTitle(_T("CHIP-8.asm.cpp"));
 	std::string console_arg = tolower(getarg("console"));
 	if (console_arg == "debug")
 		CONSOLE = Console::DEBUGOUT;
@@ -71,7 +71,6 @@ int main(int argc, char** argv) {
 		CONSOLE = Console::EMULATE;
 	else if (console_arg == "hidden")
 		CONSOLE = Console::HIDDEN;
-	
 	// Sicko mode ASCII art
 	dout << 
 		WinColor(0x04) << " _______  __   __  ___   _______          _____         _______  _______  __   __        _______  _______  _______ " << std::endl <<
@@ -82,44 +81,49 @@ int main(int argc, char** argv) {
 		WinColor(0x05) << "|     |_ |   _   ||   | |   |           |  |_|  ||   | |   _   | _____| || ||_|| ||   | |     |_ |   |    |   |    " << std::endl <<
 		WinColor(0x0d) << "|_______||__| |__||___| |___|           |_______||___| |__| |__||_______||_|   |_||___| |_______||___|    |___|    " << std::endl << std::endl <<
 		WinColor(0x07) << "S***ty coded by ya boi NipaGames" << std::endl << std::endl;
-	//Print ignored arguments
+	// Print ignored arguments
 	for (std::string arg : ignored_args) {
 		dout << MsgType::WARNING << "Completely ignored argument " << arg << std::endl;
 	}
+	ROM_LOC = getarg("rom");
 	if (ROM_LOC == "") {
+		// If console is disabled, exit the program
+		if (CONSOLE == Console::HIDDEN)
+			return EXIT_FAILURE;
+		// Send dout messages also if CONSOLE == Console::EMULATE
+		dout.set_allowed({ Console::DEBUGOUT, Console::EMULATE });
 		dout << "Hold up." << std::endl;
-		dout << "It seems like you haven't chose a ROM!" << std::endl; ROM_LOC = getarg("rom");
-		dout << WinColor(0xf0) << "[PRESS ENTER TO OPEN A FILE CHOOSER.]" << std::endl << WinColor(0x07);
+		dout << "It seems like you haven't chose a ROM!" << std::endl;
+		ROM_LOC = getarg("rom");
+		dout << WinColor(0xF0) << "[PRESS ENTER TO OPEN A FILE CHOOSER.]" << std::endl << WinColor(0x07);
 		char c = getchar();
 		wchar_t file[MAX_PATH];
 		OPENFILENAME ofn;
-		char filename[MAX_PATH];
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = NULL;
-		ofn.lpstrFilter = _T("CHIP-8 ROMs\0*.ch8");
+		// Allow .ch8 and .c8 files
+		ofn.lpstrFilter = _T("CHIP-8 ROMs\0*.ch8;*.c8");
 		ofn.lpstrFile = file;
 		ofn.lpstrFile[0] = '\0';
 		ofn.nMaxFile = MAX_PATH;
 		ofn.lpstrTitle = _T("Select a ROM");
 		ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
-		if (GetOpenFileName(&ofn))
-		{
+		// If file is chosen successfully, return lpcstrFile and convert it to std::string
+		if (GetOpenFileName(&ofn)) 
 			ROM_LOC = CW2A(ofn.lpstrFile);
-		}
 		else
-		{
-			dout << MsgType::FATAL << "Huh. This shouldn't happen. Hopefully I didn't do anything wrong." << std::endl;
-			dout << WinColor(0x07);
-			return -1;
-		}
+			dout.fatal_err();
+		// Change dout::allowed_ back to only Console::DEBUGOUT
+		dout.set_allowed({ Console::DEBUGOUT });
 	}
 	dout << MsgType::TIMER << "Starting the actual execution at " << floatf(timer.get_interval(0), 2) << "s." << std::endl;
 	allocmem();
 	Cpu cpu;
-	cpu.load_rom(ROM_LOC);
+	cpu.load_rom(ROM_LOC); 
 	cpu.emulate();
-	//Reset color
+	// Reset color
+	delete[] MEM_BLOCK;
 	dout << WinColor(0x07);
-	return 0;
+	return EXIT_SUCCESS;
 }

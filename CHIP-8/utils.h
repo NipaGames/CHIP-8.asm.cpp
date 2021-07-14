@@ -37,10 +37,11 @@ namespace chip8 {
 		};
 		class DebugOStream {
 		public:
-			explicit DebugOStream() {}
+			explicit DebugOStream(std::vector<Console> a) : allowed_(a) {}
+			explicit DebugOStream(std::initializer_list<Console> a) : allowed_(a) {}
 			template<class T>
 			DebugOStream& operator<<(const T& v) {
-				if (CONSOLE == Console::DEBUGOUT) {
+				if (std::find(this->allowed_.begin(), this->allowed_.end(), CONSOLE) != this->allowed_.end()) {
 					std::cout << v;
 				}
 				return *this;
@@ -49,6 +50,10 @@ namespace chip8 {
 			DebugOStream& operator<<(manip);
 			DebugOStream& operator<<(MsgType);
 			DebugOStream& operator<<(WinColor);
+			void fatal_err();
+			void set_allowed(std::vector<Console> a) { allowed_ = a; }
+		private:
+			std::vector<Console> allowed_;
 		};
 		extern DebugOStream dout;
 		extern DebugOStream doutln;

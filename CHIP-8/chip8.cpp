@@ -31,7 +31,7 @@ namespace chip8 {
 	void allocmem() {
 		dout << MsgType::UPDATE << "Allocating memory..." << std::endl;
 		timer.push_time();
-		// Instantiate memory
+		// Allocate memory
 		MEM_BLOCK = new char[MEM_SIZE];
 		MEM_PTR = &MEM_BLOCK[0];
 		// Fill the memory with zeroes just in case.
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
 		dout << "Hold up." << std::endl;
 		dout << "It seems like you haven't chose a ROM!" << std::endl;
 		ROM_LOC = getarg("rom");
-		dout << WinColor(0xF0) << "[PRESS ENTER TO OPEN A FILE CHOOSER.]" << std::endl << WinColor(0x07);
+		dout << WinColor(0xF0) << "[PRESS ENTER TO OPEN A FILE CHOOSER.]" << WinColor(0x07) << std::endl;
 		char c = getchar();
 		wchar_t file[MAX_PATH];
 		OPENFILENAME ofn;

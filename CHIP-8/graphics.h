@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <ppl.h>
 #include "chip8.h"
 
 namespace chip8 {

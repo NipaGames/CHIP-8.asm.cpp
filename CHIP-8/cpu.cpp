@@ -13,15 +13,9 @@ namespace chip8 {
 		}
 
 		void Cpu::init() {
-			this->I = 0;
-			this->pc = 0x200;
-			this->sp = STACK_SIZE;
-			for (int i = 0; i < REGS_SIZE; i++) {
-				V.push_back(0);
-			}
-			for (int i = 0; i < STACK_SIZE; i++) {
-				stack.push_back(0);
-			}
+			I = 0;
+			pc = 0x200;
+			V.resize(REGS_SIZE);
 		}
 
 		void Cpu::load_rom(std::string romloc) {
@@ -34,7 +28,7 @@ namespace chip8 {
 			unsigned int s = 0;
 			while (s < buffer.size()) {
 				char c = buffer[s];
-				asm_mem_store(MEM_PTR + 0x200 + s, c);
+				asm_mem_store(MEM_BLOCK + 0x200 + s, c);
 				s++;
 			}
 
@@ -51,9 +45,10 @@ namespace chip8 {
 			}
 		}
 
-		void Cpu::run_thread() {
+		void Cpu::run() {
+			init();
 			while (pc < MEM_SIZE) {
-				uint16_t opc = asm_mem_load(MEM_PTR + pc, sizeof(short));
+				uint16_t opc = asm_mem_load(MEM_BLOCK + pc, 2);
 				uint8_t* X = &V[(opc & 0x0F00) >> 8];
 				uint8_t* Y = &V[(opc & 0x00F0) >> 4];
 				switch (opc & 0xF000) {
@@ -64,7 +59,8 @@ namespace chip8 {
 						pc += 2;
 						break;
 					case 0xE:
-						pc = stack[++sp] + 2;
+						pc = stack.top() + 2;
+						stack.pop();
 						break;
 					default:
 						invalid_opcode(this, opc);
@@ -75,7 +71,7 @@ namespace chip8 {
 					pc = opc & 0xFFF;
 					break;
 				case 0x2000:
-					stack[sp--] = pc;
+					stack.push(pc);
 					pc = opc & 0x0FFF;
 					break;
 				case 0x3000:
@@ -210,15 +206,13 @@ namespace chip8 {
 			timer.push_time();
 			graphics::init_gfx();
 			// Timers and renderer are in external threads
-			std::thread main([this] { this->run_thread(); });
 			std::thread timers([this] { this->timers_update(); });
 			std::thread render([this] { graphics::render_thread(this); });
 			dout << MsgType::UPDATE << "Started all threads" << std::endl;
 			// Execute opcodes until the end of the memory
-			main.join();
+			run();
 			timers.join();
 			render.join();
-			this->~Cpu();
 			timer.print_time("Reached end of the memory");
 		}
 	}

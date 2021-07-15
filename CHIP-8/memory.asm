@@ -47,8 +47,10 @@ asm_mem_store proc		; chip8.h: asm_mem_store(char* addr, char data);
 	push ebp
 	mov ebp, esp
 	mov eax, [ebp+8]	; Load addr into EAX.
+	push ebx
 	mov bl, [ebp+12]	; Load data into EBP.
 	mov [eax], bl		; Store data into addr in memory.
+	pop ebx
 	pop ebp
 	ret
 asm_mem_store endp

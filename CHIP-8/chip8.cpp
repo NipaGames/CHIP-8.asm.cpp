@@ -1,6 +1,7 @@
 #include "chip8.h"
 
 namespace chip8 {
+
 // A hacky way to disable "not implemented"-warning messages
 #ifndef ASM
 	void asmerr() {

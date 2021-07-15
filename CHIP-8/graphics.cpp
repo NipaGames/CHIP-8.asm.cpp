@@ -77,8 +77,8 @@ namespace chip8 {
 				GetWindowRect(console, &ConsoleRect);
 				MoveWindow(console, ConsoleRect.left, ConsoleRect.top, 955, 600, TRUE);
 				// Change console buffer size
-				const int cw = WIDTH * 2;
-				const int ch = HEIGHT + 6;
+				const int cw = WIDTH;
+				const int ch = HEIGHT + 3;
 				COORD c;
 				c.X = cw * 2;
 				c.Y = ch;
@@ -92,6 +92,7 @@ namespace chip8 {
 				SetConsoleWindowInfo(handle, TRUE, &r);
 				// Remove cursor
 				CONSOLE_CURSOR_INFO cursor;
+				GetConsoleCursorInfo(handle, &cursor);
 				cursor.bVisible = false;
 				SetConsoleCursorInfo(handle, &cursor);
 			}

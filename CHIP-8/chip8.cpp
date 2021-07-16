@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = NULL;
 		// Allow .ch8 and .c8 files
-		ofn.lpstrFilter = _T("CHIP-8 ROMs\0*.ch8;*.c8");
+		ofn.lpstrFilter = _T("CHIP-8 ROMs\0*.ch8;*.c8*.rom");
 		ofn.lpstrFile = file;
 		ofn.lpstrFile[0] = '\0';
 		ofn.nMaxFile = MAX_PATH;

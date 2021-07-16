@@ -17,8 +17,8 @@ namespace chip8 {
 			std::stack<uint16_t> stack;
 			unsigned short I;
 			unsigned short pc;
-			unsigned char delay_timer;
-			unsigned char sound_timer;
+			std::atomic<unsigned char> delay_timer;
+			std::atomic<unsigned char> sound_timer;
 			Cpu();
 			void init();
 			void load_rom(std::string);
@@ -27,6 +27,8 @@ namespace chip8 {
 		private:
 			void timers_update();
 			void run();
+			void cycles_check();
+			int cycles_;
 		};
 	}
 }

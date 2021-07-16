@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <algorithm>
+#include <mutex>
 #include <Windows.h>
 
 namespace chip8 {
@@ -54,6 +55,7 @@ namespace chip8 {
 			void set_allowed(std::vector<Console> a) { allowed_ = a; }
 		private:
 			std::vector<Console> allowed_;
+			static std::mutex mutex_;
 		};
 		extern DebugOStream dout;
 		extern DebugOStream doutln;

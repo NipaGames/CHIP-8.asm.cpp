@@ -12,11 +12,14 @@ namespace chip8 {
         HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
         Console CONSOLE = Console::DEBUGOUT;
 
+        std::mutex DebugOStream::mutex_{};
+
         DebugOStream& DebugOStream::operator<<(manip m) {
             return this->operator<<<manip>(m);
         }
 
         DebugOStream& DebugOStream::operator<<(MsgType t) {
+            std::lock_guard<std::mutex> lock(mutex_);
             WinColor c;
             WinColor mc = 0x08;
             std::string s;
@@ -73,7 +76,7 @@ namespace chip8 {
 
         DebugOStream dout{ Console::DEBUGOUT };
 
-        //Format float to defined precision
+        // Format float to defined precision
         std::string floatf(float value, int prec) {
             std::ostringstream out;
             out << std::fixed << std::setprecision(prec) << value;

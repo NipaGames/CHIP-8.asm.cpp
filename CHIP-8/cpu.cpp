@@ -45,9 +45,20 @@ namespace chip8 {
 			}
 		}
 
+		void Cpu::cycles_check() {
+			while (!finished) {
+				dout << MsgType::INFO << "opc/s: " << cycles_ << std::endl;
+				cycles_ = 0;
+				std::this_thread::sleep_for(1s);
+			}
+		}
+
 		void Cpu::run() {
-			init();
 			while (pc < MEM_SIZE) {
+				// Setup a clock for keeping emulator cpu maxed at abt. 1000opc/s
+				clock_t time_end;
+				time_end = clock() + 1 * CLOCKS_PER_SEC / 1000;
+
 				uint16_t opc = asm_mem_load(MEM_BLOCK + pc, 2);
 				uint8_t* X = &V[(opc & 0x0F00) >> 8];
 				uint8_t* Y = &V[(opc & 0x00F0) >> 4];
@@ -180,8 +191,23 @@ namespace chip8 {
 					graphics::draw(this, *X, *Y, opc & 0x000F);
 					pc += 2;
 					break;
+				case 0xE000:
+					pc += 2;
+					break;
 				case 0xF000:
 					switch (opc & 0x00FF) {
+					case 0x07:
+						*X = delay_timer;
+						pc += 2;
+						break;
+					case 0x0A:
+						// TODO: keyboard input
+						pc += 2;
+						break;
+					case 0x15:
+						delay_timer = *X;
+						pc += 2;
+						break;
 					case 0x1E:
 						I += *X;
 						pc += 2;
@@ -195,8 +221,9 @@ namespace chip8 {
 					invalid_opcode(this, opc);
 					break;
 				}
-				// Since the original CHIP-8 8 ran abt. 500 opcodes/s, wait 1/500s.
-				std::this_thread::sleep_for(1s / 500);
+				cycles_++;
+				// Wait until the end of the cycle
+				while (clock() < time_end);
 			}
 			this->finished = true;
 		}
@@ -205,7 +232,9 @@ namespace chip8 {
 			dout << MsgType::TIMER << "Emulation started at " << floatf(timer.get_interval(0), 2) << "s." << std::endl;
 			timer.push_time();
 			graphics::init_gfx();
+			cycles_ = 0;
 			// Timers and renderer are in external threads
+			std::thread cycles([this] { this->cycles_check(); });
 			std::thread timers([this] { this->timers_update(); });
 			std::thread render([this] { graphics::render_thread(this); });
 			dout << MsgType::UPDATE << "Started all threads" << std::endl;

@@ -60,8 +60,7 @@ namespace chip8 {
 			while (pc < MEM_SIZE) {
 				// Setup a clock for keeping emulator cpu maxed at abt. 1000opc/s
 				clock_t time_end;
-				time_end = clock() + 1 * CLOCKS_PER_SEC / 1000;
-				char input = 0;
+				time_end = clock() + 2 * CLOCKS_PER_SEC / 1000;
 
 				uint16_t opc = threaded_mem_load(MEM_BLOCK + pc, 2);
 				uint8_t& X = V[(opc & 0x0F00) >> 8];
@@ -115,7 +114,7 @@ namespace chip8 {
 					X += (opc & 0x00FF);
 					pc += 2;
 					break;
-					// Calculations
+				// Calculations
 				case 0x8000:
 					switch (opc & 0x000F)
 					{
@@ -217,7 +216,8 @@ namespace chip8 {
 						break;
 					case 0x0A:
 						// TODO: keyboard input
-						input = 1;
+						// Wait until the key is pressed
+						while (true);
 						pc += 2;
 						break;
 					case 0x15:
@@ -272,8 +272,6 @@ namespace chip8 {
 				cycles_++;
 				// Wait until the end of the cycle
 				while (clock() < time_end);
-				// Wait until the key is pressed
-				while (input != 0);
 			}
 			this->finished = true;
 		}

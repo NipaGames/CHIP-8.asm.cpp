@@ -6,42 +6,55 @@ namespace chip8 {
 		const int HEIGHT = 32;
 		const int FPS = 60;
 		std::atomic<unsigned char> gfx[WIDTH * HEIGHT];
-		bool frame_update = false;
+		// Prev is a copy of gfx from one frame behind
+		std::atomic<unsigned char> prev[WIDTH * HEIGHT];
+		std::atomic<unsigned long> frame_updates;
+
+		void set_cursor(int x, int y)
+		{
+			const HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+			std::cout.flush();
+			COORD coord = { x, y };
+			SetConsoleCursorPosition(handle, coord);
+		}
 
 		void render() {
 			if (CONSOLE == Console::EMULATE) {
-				//Clear screen
-				system("cls");
-				std::string label = "CHIP-8.asm.cpp";
-				for (int i = 0; i < WIDTH - label.size() / 2; i++)
-					std::cout << " ";
-				std::cout << label << std::endl;
 				// Iterate all the pixels
 				for (int y = 0; y < HEIGHT; y++) {
 					for (int x = 0; x < WIDTH; x++) {
-						if (gfx[(y * WIDTH) + x] == 0)
+						set_cursor(x*2, y+1);
+						const unsigned char pixel = gfx[(y * WIDTH) + x];
+						// If the pixel hasn't changed, go to next pixel
+						if (pixel == prev[(y * WIDTH) + x])
+							continue;
+						if (pixel == 0)
 							std::cout << "  ";
 						else
 							std::cout << "||";
+						// Store pixel in prev
+						prev[(y * WIDTH) + x].store(pixel);
 					}
-					std::cout << std::endl;
 				}
-				std::cout << std::endl;
 			}
 		}
 
 		void render_thread(Cpu* cpu) {
+			int prev = frame_updates;
 			while (!cpu->finished) {
 				// Render at given FPS if frame updates are detected
-				if (frame_update) {
+				if (frame_updates > prev) {
+					prev = frame_updates;
 					render();
-					frame_update = false;
 				}
 				std::this_thread::sleep_for(1s / FPS);
 			}
 		}
 
 		void init_gfx() {
+			frame_updates = 0;
+			for (int i = 0; i < WIDTH * HEIGHT; i++)
+				gfx[i].store(0);
 			clear_screen();
 
 			// Yeah, I just copied this from web...
@@ -65,12 +78,11 @@ namespace chip8 {
 			};
 
 			for (int i = 0; i < FONTSET_SIZE; i++) {
-				MEM_BLOCK[i] = fontset[i];
-				//asm_mem_store(MEM_PTR + i, fontset[i]);
+				asm_mem_store(MEM_PTR + i, fontset[i]);
 			}
 
-			//Win32 gibberish
 			if (CONSOLE == Console::EMULATE) {
+				//Win32 gibberish
 				// Change console window size
 				RECT ConsoleRect;
 				HWND console = GetConsoleWindow();
@@ -95,16 +107,25 @@ namespace chip8 {
 				GetConsoleCursorInfo(handle, &cursor);
 				cursor.bVisible = false;
 				SetConsoleCursorInfo(handle, &cursor);
+
+				system("cls");
+				std::string label = "CHIP-8.asm.cpp";
+				for (int i = 0; i < WIDTH - label.size() / 2; i++)
+					std::cout << " ";
+				std::cout << label << std::endl;
 			}
 		}
 
 		void clear_screen() {
 			for (int i = 0; i < HEIGHT * WIDTH; i++)
-				gfx[i] = 0;
-			frame_update = true;
+				gfx[i].store(0);
+			frame_updates++;
 		}
 
-		void draw(Cpu* cpu, const uint8_t x, const uint8_t y, const uint8_t h) {
+		void draw(Cpu* cpu, uint8_t x, uint8_t y, const uint8_t h) {
+			// Some dumb game had y higher than allowed
+			if (y >= HEIGHT)
+				y = HEIGHT - 1;
 			cpu->V[0xF] = 0;
 			for (int yl = 0; yl < h; yl++) {
 				// Load Y-line from memory
@@ -112,13 +133,13 @@ namespace chip8 {
 				// And draw it in gfx
 				for (int xl = 0; xl < 8; xl++) {
 					if ((pixel & (0x80 >> xl)) != 0) {
-						if (gfx[(x + xl + ((y + yl) * WIDTH))] == 1)
+						if (gfx[x + xl + ((y + yl) * WIDTH)] == 1)
 							cpu->V[0xF] = 1;
-						gfx[x + xl + ((y + yl) * WIDTH)] ^= 1;
+						gfx[x + xl + ((y + yl) * WIDTH)].fetch_xor(1);
 					}
 				}
 			}
-			frame_update = true;
+			frame_updates++;
 		}
 	}
 }

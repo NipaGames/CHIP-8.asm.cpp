@@ -56,13 +56,13 @@ namespace chip8 {
                 this->operator<<("] ");
                 this->operator<<(mc);
             }
-            return this->operator<<("");
+            return *this;
         }
 
         DebugOStream& DebugOStream::operator<<(WinColor c) {
             if (std::find(this->allowed_.begin(), this->allowed_.end(), CONSOLE) != this->allowed_.end())
                 SetConsoleTextAttribute(hConsole, c.c_color);
-            return this->operator<<<std::string>("");
+            return *this;
         }
 
 

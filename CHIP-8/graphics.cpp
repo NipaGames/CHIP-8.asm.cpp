@@ -65,8 +65,8 @@ namespace chip8 {
 			};
 
 			for (int i = 0; i < FONTSET_SIZE; i++) {
-				// Load the fontset into memory starting at address 0x50
-				asm_mem_store(MEM_BLOCK + 0x50 + i, fontset[i]);
+				MEM_BLOCK[i] = fontset[i];
+				//asm_mem_store(MEM_PTR + i, fontset[i]);
 			}
 
 			//Win32 gibberish
@@ -108,7 +108,7 @@ namespace chip8 {
 			cpu->V[0xF] = 0;
 			for (int yl = 0; yl < h; yl++) {
 				// Load Y-line from memory
-				const unsigned char pixel = asm_mem_load(&MEM_BLOCK[cpu->I + yl], 1);
+				const unsigned char pixel = threaded_mem_load(MEM_PTR + cpu->I + yl, 1);
 				// And draw it in gfx
 				for (int xl = 0; xl < 8; xl++) {
 					if ((pixel & (0x80 >> xl)) != 0) {

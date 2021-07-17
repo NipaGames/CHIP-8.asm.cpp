@@ -20,6 +20,12 @@ namespace chip8 {
 		return 1;
 	}
 #endif
+	std::mutex mutex_ {};
+	int threaded_mem_load(void* p, uint8_t d)
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		return asm_mem_load(p, d);
+	}
 	unsigned int MEM_SIZE = 0x1000;
 	unsigned int REGS_SIZE = 16;
 	unsigned int STACK_SIZE = 16;
@@ -102,8 +108,8 @@ int main(int argc, char** argv) {
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = NULL;
-		// Allow .ch8 and .c8 files
-		ofn.lpstrFilter = _T("CHIP-8 ROMs\0*.ch8;*.c8*.rom");
+		// Allow .ch8, *.rom and .c8 files
+		ofn.lpstrFilter = _T("CHIP-8 ROMs\0*.ch8;*.c8;*.rom");
 		ofn.lpstrFile = file;
 		ofn.lpstrFile[0] = '\0';
 		ofn.nMaxFile = MAX_PATH;

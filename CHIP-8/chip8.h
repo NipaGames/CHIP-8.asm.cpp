@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <Windows.h>
+#include <MMSystem.h>
 #include <tchar.h>
 #include <atlstr.h>
 #include "utils.h"
@@ -33,4 +34,6 @@ namespace chip8 {
 	extern "C" void asm_mem_reset(void*, uint32_t);
 	extern "C" void asm_mem_store(void*, uint32_t);
 	extern "C" uint32_t asm_mem_load(void*, uint8_t);
+
+	int threaded_mem_load(void*, uint8_t);
 }

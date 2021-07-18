@@ -10,14 +10,16 @@
 
 namespace chip8 {
 	namespace utils {
-		std::string tolower(const std::string);
+		std::string to_lower(const std::string);
+		bool starts_with(const std::string, const std::string);
+		bool ends_with(const std::string, const std::string);
+		std::string floatf(float, int);
 		enum class Console {
 			DEBUGOUT,
 			EMULATE,
 			HIDDEN
 		};
 		extern Console CONSOLE;
-		std::string floatf(float, int);
 		enum class MsgType
 		{
 			TIMER,
@@ -51,6 +53,7 @@ namespace chip8 {
 			DebugOStream& operator<<(manip);
 			DebugOStream& operator<<(MsgType);
 			DebugOStream& operator<<(WinColor);
+			void fatal_err(std::string);
 			void fatal_err();
 			void set_allowed(std::vector<Console> a) { allowed_ = a; }
 		private:

@@ -4,10 +4,11 @@ namespace chip8 {
 	namespace graphics {
 		const int WIDTH = 64;
 		const int HEIGHT = 32;
-		const int FPS = 60;
+		// 60fps
+		const int FRAMETIME = 17;
 		std::atomic<unsigned char> gfx[WIDTH * HEIGHT];
 		// Prev is a copy of gfx from one frame behind
-		std::atomic<unsigned char> prev[WIDTH * HEIGHT];
+		unsigned char prev[WIDTH * HEIGHT];
 		std::atomic<unsigned long> frame_updates;
 
 		void set_cursor(int x, int y)
@@ -33,21 +34,23 @@ namespace chip8 {
 						else
 							std::cout << "||";
 						// Store pixel in prev
-						prev[(y * WIDTH) + x].store(pixel);
+						prev[(y * WIDTH) + x] = pixel;
 					}
 				}
 			}
 		}
 
 		void render_thread(Cpu* cpu) {
-			int prev = frame_updates;
+			int prev_updates = frame_updates;
 			while (!cpu->finished) {
+				clock_t time_end = clock() + FRAMETIME * CLOCKS_PER_SEC / 1000;
+
 				// Render at given FPS if frame updates are detected
-				if (frame_updates > prev) {
-					prev = frame_updates;
+				if (frame_updates > prev_updates) {
+					prev_updates = frame_updates;
 					render();
 				}
-				std::this_thread::sleep_for(1s / FPS);
+				while (clock() < time_end) Sleep(1);
 			}
 		}
 
@@ -121,7 +124,7 @@ namespace chip8 {
 				gfx[i].store(0);
 			frame_updates++;
 		}
-
+		
 		void draw(Cpu* cpu, uint8_t x, uint8_t y, const uint8_t h) {
 			// Some dumb game had y higher than allowed
 			if (y >= HEIGHT)

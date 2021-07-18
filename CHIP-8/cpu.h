@@ -15,7 +15,7 @@ namespace chip8 {
 		public:
 			std::vector<uint8_t> V;
 			std::stack<uint16_t> stack;
-			std::atomic<unsigned short> I;
+			unsigned short I;
 			unsigned short pc;
 			std::atomic<unsigned char> delay_timer;
 			std::atomic<unsigned char> sound_timer;

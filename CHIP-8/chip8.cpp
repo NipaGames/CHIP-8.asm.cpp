@@ -20,7 +20,7 @@ namespace chip8 {
 		return 1;
 	}
 #endif
-	std::mutex mutex_ {};
+	std::mutex mutex_;
 	int threaded_mem_load(void* p, uint8_t d)
 	{
 		std::lock_guard<std::mutex> lock(mutex_);
@@ -34,17 +34,36 @@ namespace chip8 {
 	std::string ROM_LOC = "";
 	BenchmarkTimer timer;
 
+	void print_asciiart() {
+		// Sicko mode ASCII art
+		dout <<
+			WinColor(0x04) << " _______  __   __  ___   _______          _____         _______  _______  __   __        _______  _______  _______ " << std::endl <<
+			WinColor(0x06) << "|       ||  | |  ||   | |       |        |  _  |       |   _   ||       ||  |_|  |      |       ||       ||       |" << std::endl <<
+			WinColor(0x0e) << "|       ||  |_|  ||   | |    _  | ____   | |_| |       |  |_|  ||  _____||       |      |       ||    _  ||    _  |" << std::endl <<
+			WinColor(0x0a) << "|       ||       ||   | |   |_| ||____| |   _   |      |       || |_____ |       |      |       ||   |_| ||   |_| |" << std::endl <<
+			WinColor(0x01) << "|      _||       ||   | |    ___|       |  | |  | ___  |       ||_____  ||       | ___  |      _||    ___||    ___|" << std::endl <<
+			WinColor(0x05) << "|     |_ |   _   ||   | |   |           |  |_|  ||   | |   _   | _____| || ||_|| ||   | |     |_ |   |    |   |    " << std::endl <<
+			WinColor(0x0d) << "|_______||__| |__||___| |___|           |_______||___| |__| |__||_______||_|   |_||___| |_______||___|    |___|    " << std::endl << std::endl <<
+			WinColor(0x07) << "S***ty coded by ya boi NipaGames" << std::endl << std::endl;
+	}
+
 	void allocmem() {
-		dout << MsgType::UPDATE << "Allocating memory..." << std::endl;
-		timer.push_time();
-		// Allocate memory
-		MEM_BLOCK = new char[MEM_SIZE];
-		MEM_PTR = &MEM_BLOCK[0];
-		// Fill the memory with zeroes just in case.
-		// Using my own (somewhat optimized) assembly function.
-		asm_mem_reset(MEM_PTR, MEM_SIZE);
-		timer.print_time("Memory allocation complete");
-		dout << MsgType::INFO << "Allocated " << std::to_string(MEM_SIZE) << " bytes of memory successfully!" << std::endl;
+		try {
+			dout << MsgType::UPDATE << "Allocating memory..." << std::endl;
+			timer.push_time();
+			// Allocate memory
+			MEM_BLOCK = new char[MEM_SIZE];
+			MEM_PTR = &MEM_BLOCK[0];
+			// Fill the memory with zeroes just in case.
+			// Using my own (somewhat optimized) assembly function.
+			asm_mem_reset(MEM_PTR, MEM_SIZE);
+			timer.print_time("Memory allocation complete");
+			dout << MsgType::INFO << "Allocated " << std::to_string(MEM_SIZE) << " bytes of memory successfully!" << std::endl;
+
+		}
+		catch (std::exception) {
+			dout.fatal_err("Memory allocation failed");
+		}
 	}
 
 	const std::set<std::string> arg_names{ "console", "rom", "msize", "ssize" };
@@ -56,37 +75,72 @@ namespace chip8 {
 }
 
 int main(int argc, char** argv) {
-	//Parse arguments
+	// Check if program is run from console
+	bool own_proc = false;
+	HWND hwnd = GetConsoleWindow();
+	DWORD pid;
+	GetWindowThreadProcessId(hwnd, &pid);
+	if (GetCurrentProcessId() == pid)
+		own_proc = true;
+	// Parse arguments
 	std::vector<std::string> ignored_args;
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
 		std::string arg_name = arg.substr(0, arg.find("="));
 		std::string arg_value = arg.substr(arg.find("=") + 1);
-		//If argname is a valid argument, add it and it's value to arguments
-		if (arg_names.find(tolower(arg_name)) != arg_names.end()) {
-			arguments.insert({ tolower(arg_name), arg_value });
+		// If argname is a valid argument, add it and it's value to arguments
+		if (arg_names.find(to_lower(arg_name)) != arg_names.end()) {
+			arguments.insert({ to_lower(arg_name), arg_value });
 			continue;
+		}
+		// This allows dragging a file to .exe or opening a file with it
+		else if (own_proc) {
+			arguments.insert({ "rom", arg });
+			break;
 		}
 		ignored_args.push_back(arg);
 	}
 	SetConsoleTitle(_T("CHIP-8.asm.cpp"));
-	std::string console_arg = tolower(getarg("console"));
+	std::string console_arg = to_lower(getarg("console"));
 	if (console_arg == "debug")
 		CONSOLE = Console::DEBUGOUT;
 	else if (console_arg == "emulate")
 		CONSOLE = Console::EMULATE;
 	else if (console_arg == "hidden")
 		CONSOLE = Console::HIDDEN;
-	// Sicko mode ASCII art
-	dout << 
-		WinColor(0x04) << " _______  __   __  ___   _______          _____         _______  _______  __   __        _______  _______  _______ " << std::endl <<
-		WinColor(0x06) << "|       ||  | |  ||   | |       |        |  _  |       |   _   ||       ||  |_|  |      |       ||       ||       |" << std::endl <<
-		WinColor(0x0e) << "|       ||  |_|  ||   | |    _  | ____   | |_| |       |  |_|  ||  _____||       |      |       ||    _  ||    _  |" << std::endl <<
-		WinColor(0x0a) << "|       ||       ||   | |   |_| ||____| |   _   |      |       || |_____ |       |      |       ||   |_| ||   |_| |" << std::endl <<
-		WinColor(0x01) << "|      _||       ||   | |    ___|       |  | |  | ___  |       ||_____  ||       | ___  |      _||    ___||    ___|" << std::endl <<
-		WinColor(0x05) << "|     |_ |   _   ||   | |   |           |  |_|  ||   | |   _   | _____| || ||_|| ||   | |     |_ |   |    |   |    " << std::endl <<
-		WinColor(0x0d) << "|_______||__| |__||___| |___|           |_______||___| |__| |__||_______||_|   |_||___| |_______||___|    |___|    " << std::endl << std::endl <<
-		WinColor(0x07) << "S***ty coded by ya boi NipaGames" << std::endl << std::endl;
+	std::string mem_arg = getarg("msize");
+	if (mem_arg != "") {
+		try {
+			if (starts_with(mem_arg, "0x")) {
+				// Allow hex values
+				std::string hex = mem_arg.substr(2, mem_arg.length());
+				MEM_SIZE = std::stoi(hex, NULL, 16);
+			}
+			else {
+				MEM_SIZE = std::stoi(mem_arg);
+			}
+		}
+		catch (std::exception) {
+			dout << MsgType::WARNING << "Invalid value in msize!" << std::endl;
+		}
+	}
+	std::string stack_arg = getarg("ssize");
+	if (stack_arg != "") {
+		try {
+			if (starts_with(stack_arg, "0x")) {
+				// Allow hex values
+				std::string hex = stack_arg.substr(2, stack_arg.length());
+				STACK_SIZE = std::stoi(hex, NULL, 16);
+			}
+			else {
+				MEM_SIZE = std::stoi(stack_arg);
+			}
+		}
+		catch (std::exception) {
+			dout << MsgType::WARNING << "Invalid value in ssize!" << std::endl;
+		}
+	}
+	print_asciiart();
 	// Print ignored arguments
 	for (std::string arg : ignored_args) {
 		dout << MsgType::WARNING << "Completely ignored argument " << arg << std::endl;
@@ -98,6 +152,9 @@ int main(int argc, char** argv) {
 			return EXIT_FAILURE;
 		// Send dout messages also if CONSOLE == Console::EMULATE
 		dout.set_allowed({ Console::DEBUGOUT, Console::EMULATE });
+		// Also show the ascii art for Console::EMULATE
+		if (CONSOLE == Console::EMULATE)
+			print_asciiart();
 		dout << "Hold up." << std::endl;
 		dout << "It seems like you haven't chose a ROM!" << std::endl;
 		ROM_LOC = getarg("rom");
@@ -108,8 +165,8 @@ int main(int argc, char** argv) {
 		ZeroMemory(&ofn, sizeof(OPENFILENAME));
 		ofn.lStructSize = sizeof(ofn);
 		ofn.hwndOwner = NULL;
-		// Allow .ch8, *.rom and .c8 files
-		ofn.lpstrFilter = _T("CHIP-8 ROMs\0*.ch8;*.c8;*.rom");
+		// Allow .ch8, *.rom and .c8 files (or any files if wanted)
+		ofn.lpstrFilter = _T("CHIP-8 ROMs\0*.ch8;*.c8;*.rom\0Any Files\0*");
 		ofn.lpstrFile = file;
 		ofn.lpstrFile[0] = '\0';
 		ofn.nMaxFile = MAX_PATH;

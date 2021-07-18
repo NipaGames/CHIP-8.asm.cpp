@@ -2,17 +2,45 @@
 
 namespace chip8 {
     namespace utils {
-        std::string tolower(std::string s) {
+        std::string to_lower(std::string s) {
             std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { 
                 return std::tolower(c); 
             });
             return s;
         }
 
+        bool starts_with(std::string s, std::string prefix) {
+            if (prefix.length() > s.length())
+                return false;
+            for (int i = 0; i < prefix.length(); i++)
+                if (s[i] != prefix[i])
+                    return false;
+            return true;
+        }
+
+        bool ends_with(std::string s, std::string suffix) {
+            const int offset = s.length() - suffix.length();
+            if (offset < 0)
+                return false;
+            for (int i = offset; i < s.length(); i++)
+                if (s[i] != suffix[i - offset])
+                    return false;
+            return true;
+        }
+
+
+        // Format float to defined precision
+        std::string floatf(float value, int prec) {
+            std::ostringstream ss;
+            ss << std::fixed << std::setprecision(prec) << value;
+            std::string text = ss.str();
+            return text;
+        }
+
         HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
         Console CONSOLE = Console::DEBUGOUT;
 
-        std::mutex DebugOStream::mutex_{};
+        std::mutex DebugOStream::mutex_;
 
         DebugOStream& DebugOStream::operator<<(manip m) {
             return this->operator<<<manip>(m);
@@ -65,6 +93,14 @@ namespace chip8 {
             return *this;
         }
 
+        void DebugOStream::fatal_err(std::string s) {
+            this->operator<<(MsgType::FATAL);
+            this->operator<<("Huh. An error has occured. Hopefully I didn't do anything wrong.");
+            this->operator<<(std::endl);
+            this->operator<<("Error: " + s);
+            this->operator<<(WinColor(0x07));
+            exit(EXIT_FAILURE);
+        }
 
         void DebugOStream::fatal_err() {
             this->operator<<(MsgType::FATAL);
@@ -75,14 +111,6 @@ namespace chip8 {
         }
 
         DebugOStream dout{ Console::DEBUGOUT };
-
-        // Format float to defined precision
-        std::string floatf(float value, int prec) {
-            std::ostringstream out;
-            out << std::fixed << std::setprecision(prec) << value;
-            std::string text = out.str();
-            return text;
-        }
 
         BenchmarkTimer::BenchmarkTimer() {
             this->push_time();

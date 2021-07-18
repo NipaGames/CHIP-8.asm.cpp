@@ -10,7 +10,7 @@ namespace chip8 {
 
 		extern const int WIDTH;
 		extern const int HEIGHT;
-		extern const int FPS;
+		extern const int FRAMETIME;
 
 		void init_gfx();
 		void clear_screen();

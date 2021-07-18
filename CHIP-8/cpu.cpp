@@ -35,16 +35,19 @@ namespace chip8 {
 			timer.print_time("Loaded ROM");
 		}
 
+		typedef std::chrono::duration<int, std::ratio<1, 60>> clock_time;
+
 		void Cpu::timers_update() {
 
 			while (!finished) {
+				auto time_end = std::chrono::steady_clock::now() + clock_time(1);
 				if (delay_timer > 0)
 					delay_timer--;
 				if (sound_timer > 0) {
 					if (--sound_timer == 0)
 						PlaySound(TEXT("beep.wav"), NULL, SND_FILENAME | SND_ASYNC);
 				}
-				std::this_thread::sleep_for(1s / 60);
+				std::this_thread::sleep_until(time_end);
 			}
 		}
 
@@ -58,11 +61,10 @@ namespace chip8 {
 
 		void Cpu::run() {
 			while (pc < MEM_SIZE) {
-				// Setup a clock for keeping emulator cpu maxed at abt. 1000opc/s
-				clock_t time_end;
-				time_end = clock() + 2 * CLOCKS_PER_SEC / 1000;
+				// Setup a clock for keeping emulator cpu maxed at abt. 500opc/s
+				clock_t time_end = clock() + 2 * CLOCKS_PER_SEC / 1000;
 
-				uint16_t opc = threaded_mem_load(MEM_BLOCK + pc, 2);
+				uint16_t opc = threaded_mem_load(MEM_PTR + pc, 2);
 				uint8_t& X = V[(opc & 0x0F00) >> 8];
 				uint8_t& Y = V[(opc & 0x00F0) >> 4];
 				switch (opc & 0xF000) {
@@ -288,6 +290,7 @@ namespace chip8 {
 			dout << MsgType::UPDATE << "Started all threads" << std::endl;
 			// Execute opcodes until the end of the memory
 			run();
+			cycles.join();
 			timers.join();
 			render.join();
 			timer.print_time("Reached end of the memory");

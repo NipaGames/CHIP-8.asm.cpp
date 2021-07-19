@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "chip8.h"
 
 namespace chip8 {
     namespace utils {
@@ -38,7 +39,7 @@ namespace chip8 {
         }
 
         HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        Console CONSOLE = Console::DEBUGOUT;
+        Console CONSOLE = DEF_CONSOLE;
 
         std::mutex DebugOStream::mutex_;
 

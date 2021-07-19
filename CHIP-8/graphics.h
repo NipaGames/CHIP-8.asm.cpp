@@ -4,12 +4,12 @@
 #include <ppl.h>
 #include "chip8.h"
 
+#define WIDTH 64
+#define HEIGHT 32
+
 namespace chip8 {
 	namespace graphics {
 		using namespace cpu;
-
-		extern const int WIDTH;
-		extern const int HEIGHT;
 
 		void init_gfx();
 		void gfx_thread(Cpu*);

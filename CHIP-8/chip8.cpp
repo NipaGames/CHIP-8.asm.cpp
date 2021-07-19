@@ -26,9 +26,8 @@ namespace chip8 {
 		std::lock_guard<std::recursive_mutex> lock(mutex_);
 		return asm_mem_load(p, d);
 	}
-	unsigned int MEM_SIZE = 0x1000;
-	unsigned int REGS_SIZE = 16;
-	unsigned int STACK_SIZE = 16;
+	unsigned int MEM_SIZE = DEF_MEM_SIZE;
+	unsigned int STACK_SIZE = DEF_STACK_SIZE;
 	char* MEM_BLOCK;
 	char* MEM_PTR;
 	std::string ROM_LOC = "";
@@ -66,7 +65,8 @@ namespace chip8 {
 		}
 	}
 
-	const std::set<std::string> arg_names{ "console", "rom", "msize", "ssize" };
+	const std::set<std::string> arg_names{ "console", "rom", "msize", "ssize", "rthread", "clock", "ftime", "cycles" };
+	const std::set<std::string> arg_commands{ "h", "v", "d" };
 	std::map<std::string, std::string> arguments;
 
 	std::string getarg(std::string arg) {
@@ -82,16 +82,82 @@ int main(int argc, char** argv) {
 	GetWindowThreadProcessId(hwnd, &pid);
 	if (GetCurrentProcessId() == pid)
 		own_proc = true;
+
 	// Parse arguments
 	std::vector<std::string> ignored_args;
 	for (int i = 1; i < argc; i++) {
 		std::string arg = argv[i];
-		std::string arg_name = arg.substr(0, arg.find("="));
+
+		// Example parse:
+		// emulator --rom="roms/pong.ch8"
+		// arg_name = "rom"
+		// arg_value = "roms/pong.ch8"
+
+		std::string arg_name = arg.substr(arg.find("--") + 2, arg.find("=") - 2);
+		std::string arg_command = arg.substr(arg.find("-") + 1, arg.length());
 		std::string arg_value = arg.substr(arg.find("=") + 1);
 		// If argname is a valid argument, add it and it's value to arguments
 		if (arg_names.find(to_lower(arg_name)) != arg_names.end()) {
 			arguments.insert({ to_lower(arg_name), arg_value });
 			continue;
+		}
+		else if (arg_commands.find(to_lower(arg_command)) != arg_commands.end()) {
+			switch (arg_command[0]) {
+			case 'h':
+				std::cout << "-- HELP --" << std::endl;
+				std::cout << "Commands:" << std::endl;
+				std::cout << " -h: Prints this help." << std::endl;
+				std::cout << " -v: Gives the current program version." << std::endl;
+				std::cout << " -d: Gives the default arguments." << std::endl;
+				std::cout << "Arguments:" << std::endl;
+				std::cout << " --console: Sets the console mode to 'debug', 'emulate' or 'hidden'." << std::endl;
+				std::cout << " --rom: Specifies the rom path." << std::endl;
+				std::cout << " --msize: Changes the virtual memory size. Prefix the value with 0x to accept hexadecimal values." << std::endl;
+				std::cout << " --ssize: Changes the stack size. Prefix the value with 0x to accept hexadecimal values." << std::endl;
+				std::cout << " --rthread: Enables or disables the external render thread. Can improve CPU usage when disabled." << std::endl;
+				std::cout << " --clock: Changes the clock frequency. For example value '16' = ~60hz." << std::endl;
+				std::cout << " --ftime: Changes the frametime if threads = enabled. For example value '16' = ~60fps." << std::endl;
+				std::cout << " --cycles: Virtual CPU cycles/clock." << std::endl;
+				return 0;
+			case 'v':
+				std::cout << "-- VERSION INFO --" << std::endl;
+				std::cout << MAJOR_VERSION << "." << MINOR_VERSION << std::endl;
+				std::cout << "Version ID: " << VERSION_ID << std::endl;
+				return 0;
+			case 'd':
+				std::cout << "-- DEFAULT ARGUMENTS --" << std::endl;
+				std::cout << "console: ";
+				switch (DEF_CONSOLE) {
+				case Console::DEBUGOUT:
+					std::cout << "debug";
+					break;
+				case Console::EMULATE:
+					std::cout << "emulate";
+					break;
+				case Console::HIDDEN:
+					std::cout << "hidden";
+					break;
+				default:
+					std::cout << "unknown";
+				}
+				std::cout << std::endl;
+				std::cout << "msize: " << DEF_MEM_SIZE << std::endl;
+				std::cout << "ssize: " << DEF_STACK_SIZE << std::endl;
+				std::cout << "rthread: ";
+				if (DEF_RTHREAD)
+					std::cout << "enabled";
+				else
+					std::cout << "disabled";
+				std::cout << std::endl;
+				std::cout << "clock: " << DEF_CLOCK << std::endl;
+				std::cout << "ftime: " << DEF_FTIME << std::endl;
+				std::cout << "cycles: " << DEF_CYCLES << std::endl;
+				return 0;
+
+			default:
+				ignored_args.push_back(arg);
+				return 0;
+			}
 		}
 		// This allows dragging a file to .exe or opening a file with it
 		else if (own_proc) {
@@ -100,6 +166,7 @@ int main(int argc, char** argv) {
 		}
 		ignored_args.push_back(arg);
 	}
+
 	SetConsoleTitle(_T("CHIP-8.asm.cpp"));
 	std::string console_arg = to_lower(getarg("console"));
 	if (console_arg == "debug")
@@ -142,8 +209,24 @@ int main(int argc, char** argv) {
 	}
 	print_asciiart();
 	// Print ignored arguments
+	// Also print ignored arguments if CONSOLE == Console::DEBUGOUT
+	dout.set_allowed({ Console::DEBUGOUT, Console::EMULATE });
+	if (CONSOLE == Console::EMULATE && !own_proc) {
+		HANDLE handle = OpenProcess(PROCESS_QUERY_INFORMATION, false, pid);
+		TCHAR buffer[MAX_PATH];
+		GetModuleFileNameEx(handle, 0, buffer, MAX_PATH);
+		CloseHandle(handle);
+		std::wstring proc_pathw(buffer);
+		std::string proc_path(proc_pathw.begin(), proc_pathw.end());
+
+		if (!ends_with(proc_path, "cmd.exe") && !ends_with(proc_path, "VsDebugConsole.exe")) {
+			dout.fatal_err("Emulate mode can only be run from cmd.exe or by its own.");
+			return EXIT_FAILURE;
+		}
+	}
+
 	for (std::string arg : ignored_args) {
-		dout << MsgType::WARNING << "Completely ignored argument " << arg << std::endl;
+		dout << MsgType::WARNING << "Completely ignored argument " << arg << std::endl << WinColor(0x07);
 	}
 	ROM_LOC = getarg("rom");
 	if (ROM_LOC == "") {
@@ -151,14 +234,10 @@ int main(int argc, char** argv) {
 		if (CONSOLE == Console::HIDDEN)
 			return EXIT_FAILURE;
 		// Send dout messages also if CONSOLE == Console::EMULATE
-		dout.set_allowed({ Console::DEBUGOUT, Console::EMULATE });
-		// Also show the ascii art for Console::EMULATE
-		if (CONSOLE == Console::EMULATE)
-			print_asciiart();
 		dout << "Hold up." << std::endl;
 		dout << "It seems like you haven't chose a ROM!" << std::endl;
 		ROM_LOC = getarg("rom");
-		dout << WinColor(0xF0) << "[PRESS ENTER TO OPEN A FILE CHOOSER.]" << WinColor(0x07) << std::endl;
+		dout << WinColor(0xF0) << "[PRESS ENTER TO OPEN A FILE CHOOSER.]" << std::endl << WinColor(0x07);
 		char c = getchar();
 		wchar_t file[MAX_PATH];
 		OPENFILENAME ofn;
@@ -178,8 +257,8 @@ int main(int argc, char** argv) {
 		else
 			dout.fatal_err();
 		// Change dout::allowed_ back to only Console::DEBUGOUT
-		dout.set_allowed({ Console::DEBUGOUT });
 	}
+	dout.set_allowed({ Console::DEBUGOUT });
 	dout << MsgType::TIMER << "Starting the actual execution at " << floatf(timer.get_interval(0), 2) << "s." << std::endl;
 	allocmem();
 	Cpu cpu;

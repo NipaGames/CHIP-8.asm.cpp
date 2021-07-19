@@ -2,8 +2,6 @@
 
 namespace chip8 {
 	namespace graphics {
-		const int WIDTH = 64;
-		const int HEIGHT = 32;
 		std::atomic<unsigned long> frame_updates = 0;
 		unsigned long prev_updates = 0;
 		std::atomic<unsigned char> gfx[WIDTH * HEIGHT];
@@ -14,7 +12,7 @@ namespace chip8 {
 		{
 			const HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
 			std::cout.flush();
-			COORD coord = { x, y };
+			COORD coord = { static_cast<SHORT>(x), static_cast<SHORT>(y) };
 			SetConsoleCursorPosition(handle, coord);
 		}
 
@@ -107,7 +105,7 @@ namespace chip8 {
 
 				system("cls");
 				std::string label = "CHIP-8.asm.cpp";
-				for (int i = 0; i < WIDTH - label.size() / 2; i++)
+				for (unsigned int i = 0; i < WIDTH - label.size() / 2; i++)
 					std::cout << " ";
 				std::cout << label << std::endl;
 			}

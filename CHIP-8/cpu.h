@@ -9,6 +9,25 @@
 #include <future>
 #include <stack>
 
+// Key definitions
+#define KEY_1 '1'
+#define KEY_2 '2'
+#define KEY_3 '3'
+#define KEY_C '4'
+#define KEY_4 'Q'
+#define KEY_5 'W'
+#define KEY_6 'E'
+#define KEY_D 'R'
+#define KEY_7 'A'
+#define KEY_8 'S'
+#define KEY_9 'D'
+#define KEY_E 'F'
+#define KEY_A 'Z'
+#define KEY_0 'X'
+#define KEY_B 'C'
+#define KEY_F 'V'
+
+
 using namespace std::literals::chrono_literals;
 
 namespace chip8 {

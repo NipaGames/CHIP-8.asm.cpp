@@ -3,12 +3,20 @@
 
 namespace chip8 {
 	namespace cpu {
-		const std::map<uint8_t, char> keys = {
-			{ 0x1, '1'}, { 0x2, '2'}, { 0x3, '3'}, { 0xC, '4'},
-			{ 0x4, 'Q'}, { 0x5, 'W'}, { 0x6, 'E'}, { 0xD, 'R'},
-			{ 0x7, 'A'}, { 0x8, 'S'}, { 0x9, 'D'}, { 0xE, 'F'},
-			{ 0xA, 'Z'}, { 0x0, 'X'}, { 0xB, 'C'}, { 0xF, 'V'}
+		const char keys[16] =  {
+			KEY_0, KEY_1, KEY_2, KEY_3,
+			KEY_4, KEY_5, KEY_6, KEY_7,
+			KEY_8, KEY_9, KEY_A, KEY_B,
+			KEY_C, KEY_D, KEY_E, KEY_F
 		};
+
+		constexpr char get_from_key(char k) {
+			for (int i = 0; i < 16; i++) {
+				if (keys[i] == k)
+					return i;
+			}
+			return -1;
+		}
 
 		void invalid_opcode(Cpu* cpu, unsigned short opc) {
 			dout << MsgType::WARNING << "Unknown opcode: 0x" << std::hex << std::setfill('0') << std::setw(4) << opc << "!" << std::endl;
@@ -45,8 +53,10 @@ namespace chip8 {
 		void Cpu::update() {
 			while (!finished) {
 				clock_t time_end = clock() + 17 * CLOCKS_PER_SEC / 1000;
-				for (int i = 0; i < 10; i++)
+				for (int i = 0; i < 10; i++) {
 					cycle();
+					std::this_thread::sleep_for(0ms);
+				}
 				if (delay_timer > 0)
 					delay_timer--;
 				if (sound_timer > 0) {
@@ -58,7 +68,7 @@ namespace chip8 {
 		}
 
 		void Cpu::cycle() {
-			if (pc >= MEM_SIZE)
+			if (pc > MEM_SIZE)
 				finished = true;
 
 			uint16_t opc = asm_mem_load(MEM_PTR + pc, 2);
@@ -186,8 +196,7 @@ namespace chip8 {
 				pc = opc & 0xFFF + V[0x0];
 				break;
 			case 0xC000:
-				srand(time(NULL));
-				X = std::rand() % 26 & (opc & 0x00FF);
+				X = (rand() % 0xFF) & (opc & 0x00FF);
 				pc += 2;
 				break;
 			case 0xD000:
@@ -197,13 +206,13 @@ namespace chip8 {
 			case 0xE000:
 				switch (opc & 0x00FF) {
 				case 0x9E:
-					if (GetAsyncKeyState(keys.find(X)->second) & 0x8000)
+					if (GetKeyState(keys[X]) & 0x8000)
 						pc += 4;
 					else
 						pc += 2;
 					break;
 				case 0xA1:
-					if (GetAsyncKeyState(keys.find(X)->second) & 0x8000)
+					if (GetKeyState(keys[X]) & 0x8000)
 						pc += 2;
 					else
 						pc += 4;
@@ -222,15 +231,11 @@ namespace chip8 {
 				case 0x0A:
 					while (true) {
 						char c = _getch();
-						bool found = false;
-						for (auto it = keys.begin(); it != keys.end(); it++)
-							if (it->second == std::toupper(c)) {
-								X = it->first;
-								found = true;
-								break;
-							}
-						if (found)
+						uint8_t i = get_from_key(std::toupper(c));
+						if (i != -1) {
+							X = i;
 							break;
+						}
 					}
 					pc += 2;
 					break;
@@ -303,6 +308,7 @@ namespace chip8 {
 			main.join();
 			gfx.join();
 			timer.print_time("Reached end of the memory");
+			_getch();
 		}
 	}
 }

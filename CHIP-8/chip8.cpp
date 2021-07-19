@@ -20,10 +20,10 @@ namespace chip8 {
 		return 1;
 	}
 #endif
-	std::mutex mutex_;
+	std::recursive_mutex mutex_{};
 	int threaded_mem_load(void* p, uint8_t d)
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
+		std::lock_guard<std::recursive_mutex> lock(mutex_);
 		return asm_mem_load(p, d);
 	}
 	unsigned int MEM_SIZE = 0x1000;

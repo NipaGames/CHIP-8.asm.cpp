@@ -4,12 +4,11 @@ namespace chip8 {
 	namespace graphics {
 		const int WIDTH = 64;
 		const int HEIGHT = 32;
-		// 60fps
-		const int FRAMETIME = 17;
+		std::atomic<unsigned long> frame_updates = 0;
+		unsigned long prev_updates = 0;
 		std::atomic<unsigned char> gfx[WIDTH * HEIGHT];
 		// Prev is a copy of gfx from one frame behind
 		unsigned char prev[WIDTH * HEIGHT];
-		std::atomic<unsigned long> frame_updates;
 
 		void set_cursor(int x, int y)
 		{
@@ -40,24 +39,19 @@ namespace chip8 {
 			}
 		}
 
-		void render_thread(Cpu* cpu) {
-			int prev_updates = frame_updates;
+		void gfx_thread(Cpu* cpu) {
 			while (!cpu->finished) {
-				clock_t time_end = clock() + FRAMETIME * CLOCKS_PER_SEC / 1000;
-
-				// Render at given FPS if frame updates are detected
 				if (frame_updates > prev_updates) {
 					prev_updates = frame_updates;
 					render();
 				}
-				while (clock() < time_end) Sleep(1);
+				std::this_thread::sleep_for(0ms);
 			}
 		}
 
 		void init_gfx() {
-			frame_updates = 0;
 			for (int i = 0; i < WIDTH * HEIGHT; i++)
-				gfx[i].store(0);
+				gfx[i] = 0;
 			clear_screen();
 
 			// Yeah, I just copied this from web...
@@ -121,24 +115,24 @@ namespace chip8 {
 
 		void clear_screen() {
 			for (int i = 0; i < HEIGHT * WIDTH; i++)
-				gfx[i].store(0);
+				gfx[i] = 0;
 			frame_updates++;
 		}
 		
-		void draw(Cpu* cpu, uint8_t x, uint8_t y, const uint8_t h) {
+		void gfx_draw(Cpu* cpu, uint8_t x, uint8_t y, const uint8_t h) {
 			// Some dumb game had y higher than allowed
 			if (y >= HEIGHT)
 				y = HEIGHT - 1;
 			cpu->V[0xF] = 0;
 			for (int yl = 0; yl < h; yl++) {
 				// Load Y-line from memory
-				const unsigned char pixel = threaded_mem_load(MEM_PTR + cpu->I + yl, 1);
+				const unsigned char pixel = MEM_BLOCK[cpu->I + yl];
 				// And draw it in gfx
 				for (int xl = 0; xl < 8; xl++) {
 					if ((pixel & (0x80 >> xl)) != 0) {
 						if (gfx[x + xl + ((y + yl) * WIDTH)] == 1)
 							cpu->V[0xF] = 1;
-						gfx[x + xl + ((y + yl) * WIDTH)].fetch_xor(1);
+						gfx[x + xl + ((y + yl) * WIDTH)] ^= 1;
 					}
 				}
 			}

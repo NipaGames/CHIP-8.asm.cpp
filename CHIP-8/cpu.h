@@ -5,6 +5,8 @@
 #include <vector>
 #include <iomanip>
 #include <thread>
+#include <conio.h>
+#include <future>
 #include <stack>
 
 using namespace std::literals::chrono_literals;
@@ -17,17 +19,16 @@ namespace chip8 {
 			std::stack<uint16_t> stack;
 			unsigned short I;
 			unsigned short pc;
-			std::atomic<unsigned char> delay_timer;
-			std::atomic<unsigned char> sound_timer;
+			unsigned char delay_timer;
+			unsigned char sound_timer;
 			Cpu();
 			void init();
 			void load_rom(std::string);
 			void emulate();
-			bool finished;
+			std::atomic<bool> finished;
 		private:
-			void timers_update();
-			void run();
-			void cycles_check();
+			void update();
+			void cycle();
 			int cycles_;
 		};
 	}

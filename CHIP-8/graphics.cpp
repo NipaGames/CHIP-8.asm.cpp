@@ -39,11 +39,17 @@ namespace chip8 {
 
 		void gfx_thread(Cpu* cpu) {
 			while (!cpu->finished) {
-				if (frame_updates > prev_updates) {
-					prev_updates = frame_updates;
-					render();
+				int c = 1;
+				if (FTIMERS)
+					c = 10;
+				for (int i = 0; i < c; i++) {
+					if (frame_updates > prev_updates) {
+						prev_updates = frame_updates;
+						render();
+					}
 				}
-				std::this_thread::sleep_for(0ms);
+				if (FTIMERS)
+					std::this_thread::sleep_for(15ms);
 			}
 		}
 

@@ -20,14 +20,17 @@ namespace chip8 {
 		return 1;
 	}
 #endif
-	std::recursive_mutex mutex_{};
+	std::mutex mutex_{};
 	int threaded_mem_load(void* p, uint8_t d)
 	{
-		std::lock_guard<std::recursive_mutex> lock(mutex_);
+		std::lock_guard<std::mutex> lock(mutex_);
 		return asm_mem_load(p, d);
 	}
 	unsigned int MEM_SIZE = DEF_MEM_SIZE;
 	unsigned int STACK_SIZE = DEF_STACK_SIZE;
+	std::atomic<bool> FTIMERS = DEF_FTIMERS;
+	unsigned int CLOCK = DEF_CLOCK;
+	unsigned int CYCLES = DEF_CYCLES;
 	char* MEM_BLOCK;
 	char* MEM_PTR;
 	std::string ROM_LOC = "";
@@ -65,7 +68,7 @@ namespace chip8 {
 		}
 	}
 
-	const std::set<std::string> arg_names{ "console", "rom", "msize", "ssize", "rthread", "clock", "ftime", "cycles" };
+	const std::set<std::string> arg_names{ "console", "rom", "msize", "ssize", "ftimers", "clock", "cycles" };
 	const std::set<std::string> arg_commands{ "h", "v", "d" };
 	std::map<std::string, std::string> arguments;
 
@@ -114,9 +117,8 @@ int main(int argc, char** argv) {
 				std::cout << " --rom: Specifies the rom path." << std::endl;
 				std::cout << " --msize: Changes the virtual memory size. Prefix the value with 0x to accept hexadecimal values." << std::endl;
 				std::cout << " --ssize: Changes the stack size. Prefix the value with 0x to accept hexadecimal values." << std::endl;
-				std::cout << " --rthread: Enables or disables the external render thread. Can improve CPU usage when disabled." << std::endl;
+				std::cout << " --ftimers: Enables or disables fast timers ('enabled' || 'disabled'). Not as accurate but much less CPU usage." << std::endl;
 				std::cout << " --clock: Changes the clock frequency. For example value '16' = ~60hz." << std::endl;
-				std::cout << " --ftime: Changes the frametime if threads = enabled. For example value '16' = ~60fps." << std::endl;
 				std::cout << " --cycles: Virtual CPU cycles/clock." << std::endl;
 				return 0;
 			case 'v':
@@ -144,13 +146,12 @@ int main(int argc, char** argv) {
 				std::cout << "msize: " << DEF_MEM_SIZE << std::endl;
 				std::cout << "ssize: " << DEF_STACK_SIZE << std::endl;
 				std::cout << "rthread: ";
-				if (DEF_RTHREAD)
+				if (DEF_FTIMERS)
 					std::cout << "enabled";
 				else
 					std::cout << "disabled";
 				std::cout << std::endl;
 				std::cout << "clock: " << DEF_CLOCK << std::endl;
-				std::cout << "ftime: " << DEF_FTIME << std::endl;
 				std::cout << "cycles: " << DEF_CYCLES << std::endl;
 				return 0;
 
@@ -205,6 +206,31 @@ int main(int argc, char** argv) {
 		}
 		catch (std::exception) {
 			dout << MsgType::WARNING << "Invalid value in ssize!" << std::endl;
+		}
+	}
+	std::string ftimers_arg = getarg("ftimers");
+	if (ftimers_arg != "") {
+		if (ftimers_arg == "enabled")
+			FTIMERS = true;
+		else if (ftimers_arg == "disabled")
+			FTIMERS = false;
+	}
+	std::string clock_arg = getarg("clock");
+	if (clock_arg != "") {
+		try {
+			CLOCK = std::stoi(clock_arg);
+		}
+		catch (std::exception) {
+			dout << MsgType::WARNING << "Invalid value in clock!" << std::endl;
+		}
+	}
+	std::string cycles_arg = getarg("cycles");
+	if (cycles_arg != "") {
+		try {
+			CYCLES = std::stoi(cycles_arg);
+		}
+		catch (std::exception) {
+			dout << MsgType::WARNING << "Invalid value in cycles!" << std::endl;
 		}
 	}
 	print_asciiart();

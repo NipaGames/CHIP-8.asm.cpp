@@ -48,7 +48,7 @@ namespace chip8 {
 		private:
 			void update();
 			void cycle();
-			int cycles_;
+			std::atomic<int> cycles_;
 		};
 	}
 }

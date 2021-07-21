@@ -23,20 +23,22 @@ using namespace chip8::cpu;
 #define DEF_CONSOLE Console::EMULATE
 #define DEF_MEM_SIZE 0x1000
 #define DEF_STACK_SIZE 16
-#define DEF_RTHREAD true
-#define DEF_CLOCK 16
-#define DEF_FTIME 16
-#define DEF_CYCLES 10
+#define DEF_FTIMERS true
+#define DEF_CLOCK 15
+#define DEF_CYCLES 9
 
 #define MAJOR_VERSION "alpha_build"
-#define MINOR_VERSION "1"
-#define VERSION_ID 0
+#define MINOR_VERSION "2"
+#define VERSION_ID 1
 
 namespace chip8 {
 	extern BenchmarkTimer timer;
 	
 	extern unsigned int MEM_SIZE;
 	extern unsigned int STACK_SIZE;
+	extern std::atomic<bool> FTIMERS;
+	extern unsigned int CLOCK;
+	extern unsigned int CYCLES;
 	constexpr unsigned int FONTSET_SIZE = 0x10 * 5;
 	extern char* MEM_BLOCK;
 	extern char* MEM_PTR;

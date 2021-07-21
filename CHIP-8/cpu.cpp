@@ -52,10 +52,9 @@ namespace chip8 {
 
 		void Cpu::update() {
 			while (!finished) {
-				clock_t time_end = clock() + 17 * CLOCKS_PER_SEC / 1000;
-				for (int i = 0; i < 10; i++) {
+				clock_t time_end = clock() + CLOCK * CLOCKS_PER_SEC / 1000;
+				for (int i = 0; i < CYCLES; i++) {
 					cycle();
-					std::this_thread::sleep_for(0ms);
 				}
 				if (delay_timer > 0)
 					delay_timer--;
@@ -63,7 +62,10 @@ namespace chip8 {
 					PlaySound(TEXT("beep.wav"), NULL, SND_FILENAME | SND_ASYNC);
 					sound_timer = 0;
 				}
-				while (clock() < time_end) std::this_thread::sleep_for(0ms);
+				if (FTIMERS)
+					std::this_thread::sleep_for(std::chrono::milliseconds(CYCLES));
+				else
+					while (clock() < time_end);
 			}
 		}
 

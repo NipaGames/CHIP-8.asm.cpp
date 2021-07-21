@@ -4,7 +4,7 @@ At the moment, this works only in console (GUI coming soon?).
 Compile in VS19 with MASM enabled and arcitechture set to x86.
 ## TODO
 - Better command-line argument system
-- Add support for WinColor and MsgType in default ´´´std::cout´´´
+- Add support for WinColor and MsgType in default std::cout
 - Better error handling
 - Create an installer with some ROMs
 - Add GUI (OpenGL?)
@@ -14,7 +14,7 @@ and I had very little C++ experience before this project.
 ## LEARNED THINGS
 Since I haven't really used C++ or assembly, this has been a great learning experience.
 List:
-- Pointers don't default to ´´´NULL´´´/´´´nullptr´´´
+- Pointers don't default to NULL/nullptr
 - References > pointers
-- ´´´std::mutex´´´ && ´´´std::lock_guard´´´ && ´´´std::atomic´´´ = pain
+- std::mutex && std::lock_guard && std::atomic = pain
 - You shoudn't really use assembly (unless you really need)
